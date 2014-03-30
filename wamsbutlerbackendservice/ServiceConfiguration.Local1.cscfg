@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceConfiguration serviceName="wamsbutlerbackendservice" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="3" osVersion="*" schemaVersion="2013-10.2.2">
+  <Role name="wamsbulterbackend">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />
+      <Setting name="strConnConfig" value="UseDevelopmentStorage=true" />
+      <Setting name="appId" value="wamsvodbutler01" />
+      <Setting name="TimeSleep" value="60000" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="true" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="jpgg" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountEncryptedPassword" value="MIIBnQYJKoZIhvcNAQcDoIIBjjCCAYoCAQAxggFOMIIBSgIBADAyMB4xHDAaBgNVBAMME1dpbmRvd3MgQXp1cmUgVG9vbHMCEDvafUpic0O7Q5slPs8P714wDQYJKoZIhvcNAQEBBQAEggEAxFDKwlA+vZrMz7oxSeqgM1rtXmChoE1if0aHXVHR3SiRV7ZN9RP2NbX4I9nVAaAJ55zjU5HQ5g3uFa1whm//HK3sCekqvOWIZxxGWmrbzJ167Rh9E/YmuyrTyaDktr+2Yv2cgMrhpXO2y1JvlUPy7iNFF+Z2sycWVuJQgv1czkegCHkQMc4PTe4CIzx0N8BrLE8NM95mC6IOsyfLgWl/D4ajwse+EzoQPfZnzp2qxCZTlYDS2xpWIXqGeXo8W/YMPdO+c4Q2Va+/kdnRQQaWJA6IzyJqCpP66X0HGA9J4HeZ6BDfZ/WWwDBSjvX7/TUA6bPx6+qMkIkYPPuef/zYtzAzBgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECKpL1UndAgMigBBpNpb4v+G8syETtbn94nSy" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountExpiration" value="2015-02-12T23:59:59.0000000-03:00" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteForwarder.Enabled" value="true" />
+    </ConfigurationSettings>
+    <Certificates>
+      <Certificate name="Microsoft.WindowsAzure.Plugins.RemoteAccess.PasswordEncryption" thumbprint="780339008D40B17AD443D5745A7AA601EABE62BD" thumbprintAlgorithm="sha1" />
+    </Certificates>
+  </Role>
+</ServiceConfiguration>
