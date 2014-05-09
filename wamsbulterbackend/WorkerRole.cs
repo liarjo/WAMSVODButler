@@ -36,17 +36,8 @@ namespace TED.Samples.WAMSBulter.BackEndService
             ExternalStorageContainer = xConfig.GetConfig("ExternalStorageContainer");
             Active = ("1" == xConfig.GetConfig("Active"));
         }
-        private void OnAssetAllEncodeFinish(object sender, EncodeJobNotification Info)
-        {
-            //TODO>Notification 
-        }
-        private void OnJobEncodeFinish(object sender, JobFinishInfo Info)
-        {
-            string msg = string.Format("Video {0} are publish at {1}", Info.OriginalMp4, Info.AssetUri);
-            Trace.TraceWarning(msg);
-        }
-
-        private void ProcessAll()
+       
+        private void ProcessAllSingleFileVideo()
         {
             //Read congifuration from Table in aech iteration
             Config();
@@ -54,16 +45,12 @@ namespace TED.Samples.WAMSBulter.BackEndService
             {
                 ButlerEncoderPublish myHelp = new ButlerEncoderPublish(MediaAccountName, MediaAccountKey, wamsBulterConn, AppId);
                 myHelp.ProfileFileDirectory = Path.GetFullPath(@".\configFile\");
-                myHelp.OnJobEncodeFinish += OnJobEncodeFinish;
-                myHelp.OnAssetAllEncodeFinish += OnAssetAllEncodeFinish;
-                //Process the New MP4 blob files from the Stagin Storage
                 myHelp.ProcessNewVideos(ExternalStorageConn, ExternalStorageContainer, AssetStorageConn);
             }
             else
             {
                 Trace.TraceWarning("Worker Role Butler is not Active");
             }
-           
 
         }
         public override void Run()
@@ -71,9 +58,8 @@ namespace TED.Samples.WAMSBulter.BackEndService
 
             while (true)
             {
-                ProcessAll();
+                ProcessAllSingleFileVideo();
                 Thread.Sleep(int.Parse(CloudConfigurationManager.GetSetting("TimeSleep")));
-                
             }
           
         }

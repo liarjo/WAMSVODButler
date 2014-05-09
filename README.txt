@@ -96,7 +96,7 @@ Example: mywams01
 
 5. Create a Blob storage Container "stage"
 
-6. Create a Blob storage container "wamsvodbuterencodeconfig"
+6. Create a Blob storage container "wamsvodbutlerencodeconfig"
 
 
 Running and test

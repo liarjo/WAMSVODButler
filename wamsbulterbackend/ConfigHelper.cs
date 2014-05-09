@@ -33,17 +33,6 @@ namespace TED.Samples.WAMSBulter.BackEndService.Config
         }
         public string GetConfig(string key)
         {
-            //string aux = null;
-            
-            //TableOperation retrieveOperation = TableOperation.Retrieve<ConfigEntity>(myPartitionKey, key);
-            //TableResult retrievedResult = table.Execute(retrieveOperation);
-            //if (retrievedResult.Result != null)
-            //{
-            //    ConfigEntity info = (ConfigEntity)retrievedResult.Result;
-            //    aux = info.value;
-            //}
-            //return aux;
-
             return htConfig[key].ToString();
         }
         

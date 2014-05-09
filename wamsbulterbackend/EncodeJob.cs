@@ -60,9 +60,10 @@ namespace TED.Samples.WAMSBulter.BackEndService
 
             var daysForWhichStreamingUrlIsActive = 365;
             var outputAsset = myMediaServiceContext.Assets.Where(a => a.Id == targetAssetID).FirstOrDefault();
-            var accessPolicy = myMediaServiceContext.AccessPolicies.Create(outputAsset.Name,
-                                                             TimeSpan.FromDays(daysForWhichStreamingUrlIsActive),
-                                                             AccessPermissions.Read | AccessPermissions.List);
+            var accessPolicy = myMediaServiceContext.AccessPolicies.Create(
+                outputAsset.Name
+                ,TimeSpan.FromDays(daysForWhichStreamingUrlIsActive)
+                ,AccessPermissions.Read );
             var assetFiles = outputAsset.AssetFiles.ToList();
             switch (type)
             {
@@ -71,7 +72,7 @@ namespace TED.Samples.WAMSBulter.BackEndService
                 case LocatorType.OnDemandOrigin:
                     assetFile = assetFiles.Where(f => f.Name.ToLower().EndsWith(".ism")).FirstOrDefault();
                     locator = myMediaServiceContext.Locators.CreateLocator(LocatorType.OnDemandOrigin, outputAsset, accessPolicy, DateTime.UtcNow.AddMinutes(-5));
-                    switch (contentType)
+                     switch (contentType)
 	                {
                         case MediaContentType.SmoothStreaming:
                              smoothUri = new Uri(locator.Path + assetFile.Name + "/manifest");
@@ -147,12 +148,12 @@ namespace TED.Samples.WAMSBulter.BackEndService
                         OnJobFinish(this, job);
                     }
                     break;
-                case JobState.Canceling:
-                case JobState.Queued:
-                case JobState.Scheduled:
-                case JobState.Processing:
-                    Trace.TraceInformation("Please wait Job {0} Finish", job.Id);
-                    break;
+                //case JobState.Canceling:
+                //case JobState.Queued:
+                //case JobState.Scheduled:
+                //case JobState.Processing:
+                //    //Trace.TraceInformation("Please wait Job {0} Finish", job.Id);
+                //    break;
                 case JobState.Canceled:
                     if (OnJobCancel != null)
                     {
@@ -232,7 +233,7 @@ namespace TED.Samples.WAMSBulter.BackEndService
 
                     CloudStorageAccount storageAccount = CloudStorageAccount.Parse(this.myConnConfigFiles);
                     CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
-                    CloudBlobContainer container = blobClient.GetContainerReference("wamsvodbuterencodeconfig");
+                    CloudBlobContainer container = blobClient.GetContainerReference("wamsvodbutlerencodeconfig");
                     CloudBlockBlob blockBlob2 = container.GetBlockBlobReference(xmlblobname);
 
                     string encodeConfigXml;

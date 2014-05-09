@@ -1,0 +1,125 @@
+#Copyright © Microsoft Corporation.
+#All rights reserved.
+#Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.
+#THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY OR NON-INFRINGEMENT.
+#See the Apache Version 2.0 License for specific language governing permissions and limitations under the License.
+
+function CreateButlerStorageElements
+{
+ Param
+    (
+        # Subscription name of WAMS
+        [Parameter(Mandatory = $true)]
+        [string]
+        $azureSubscritionName,
+
+        # WAMS Account name
+        [Parameter(Mandatory = $true)]
+        [string]
+        $wamsAcountName,
+
+        # WAMS Account KEY
+        [Parameter(Mandatory = $true)]
+        [string]
+        $wamsAcountKey,
+
+        # WAMS Storage Name
+        [Parameter(Mandatory = $true)]
+        [string]
+        $butlerStorageAccountName,
+		
+        # Butler stageing Storage Container name
+        [Parameter(Mandatory = $true)]
+        [string]
+        $butlerContainerStageName
+		)
+
+#You must don't Change this variables
+$butlerAplicationId='video1'
+$butlerNotificationQueueName='wamsbutlerallencodefinish'
+$butlerTableConfig='wamsbutlerconfig'
+$butlerEncodigConfigContainerName='wamsvodbutlerencodeconfig'
+$butlerTableOutputFormatConfig='wamsbutleroutputformat'
+
+
+Function InsertButlerConfig($accountName,$accountKey,$tableName, $PartitionKey,$RowKey,$value   )
+{
+  	#Create instance of storage credentials object using account name/key
+	$accountCredentials = New-Object "Microsoft.WindowsAzure.Storage.Auth.StorageCredentials" $accountName, $accountKey.Primary              
+	#Create instance of CloudStorageAccount object
+	$storageAccount = New-Object "Microsoft.WindowsAzure.Storage.CloudStorageAccount" $accountCredentials, $true
+	#Create table client
+	$tableClient = $storageAccount.CreateCloudTableClient()
+	#Get a reference to CloudTable object
+	$table = $tableClient.GetTableReference($tableName)
+	#Try to create table if it does not exist
+	$table.CreateIfNotExists()
+  
+  	$entity = New-Object "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity" $partitionKey, $rowKey
+    $entity.Properties.Add("value", $value)
+    $result = $table.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))
+}
+Function InsertButlerOutPutFormat($accountName,$accountKey,$tableName,$partitionKey,$rowKey,$intOutTypesId,$JobEncodeDescription,$TaskEncodeDescription,$MediaProcessorByName,$EncodeDescription,$NameTail )
+{
+	#Create instance of storage credentials object using account name/key
+	$accountCredentials = New-Object "Microsoft.WindowsAzure.Storage.Auth.StorageCredentials" $accountName, $accountKey.Primary 
+	#Create instance of CloudStorageAccount object
+	$storageAccount = New-Object "Microsoft.WindowsAzure.Storage.CloudStorageAccount" $accountCredentials, $true
+	#Create table client
+	$tableClient = $storageAccount.CreateCloudTableClient()
+	#Get a reference to CloudTable object
+	$table = $tableClient.GetTableReference($tableName)
+	#Try to create table if it does not exist
+	$table.CreateIfNotExists()
+	$entity = New-Object "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity" $partitionKey, $rowKey
+	$entity.Properties.Add("OutTypesId", $intOutTypesId)
+	$entity.Properties.Add("JobEncodeDescription", $JobEncodeDescription)
+	$entity.Properties.Add("TaskEncodeDescription", $TaskEncodeDescription)
+	$entity.Properties.Add("MediaProcessorByName", $MediaProcessorByName)
+	$entity.Properties.Add("EncodeDescription", $EncodeDescription)
+	$entity.Properties.Add("NameTail", $NameTail)
+	
+	$result = $table.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity))
+}
+
+Try
+ {
+   #1. Set-AzureSubscription $azureSubscritionName
+   Select-AzureSubscription $azureSubscritionName
+  
+   #2. Create storage table "wamsbutlerconfig"
+	
+   $sKey=Get-AzureStorageKey -StorageAccountName $butlerStorageAccountName
+   $sExternalConnString='DefaultEndpointsProtocol=https;AccountName=' + $butlerStorageAccountName +';AccountKey='+ $sKey.Primary +''
+   $wamsStorageAccountCon=$sExternalConnString
+   $butlerStorageContext= New-AzureStorageContext -StorageAccountKey $skey.Primary -StorageAccountName $butlerStorageAccountName
+   New-AzureStorageTable -Context $butlerStorageContext -Name $butlerTableConfig
+   	   #add entity (TODO)
+   	   InsertButlerConfig -RowKey 'Active' -value '1' -accountName $butlerStorageAccountName -accountKey $sKey -tableName $butlerTableConfig -PartitionKey $butlerAplicationId 
+	   #WAMS config
+	   InsertButlerConfig -RowKey 'AssetStorageConn' -value $wamsStorageAccountCon -accountName $butlerStorageAccountName -accountKey $sKey -tableName $butlerTableConfig -PartitionKey $butlerAplicationId 
+	   InsertButlerConfig -RowKey 'MediaAccountKey' -value $wamsAcountKey -accountName $butlerStorageAccountName -accountKey $sKey -tableName $butlerTableConfig -PartitionKey $butlerAplicationId 
+	   InsertButlerConfig -RowKey 'MediaAccountName' -value $wamsAcountName -accountName $butlerStorageAccountName -accountKey $sKey -tableName $butlerTableConfig -PartitionKey $butlerAplicationId 
+	   #Sataging Storage config
+	   InsertButlerConfig -RowKey 'ExternalStorageConn' -value $sExternalConnString -accountName $butlerStorageAccountName -accountKey $sKey -tableName $butlerTableConfig -PartitionKey $butlerAplicationId 
+	   InsertButlerConfig -RowKey 'ExternalStorageContainer' -value $butlerContainerStageName -accountName $butlerStorageAccountName -accountKey $sKey -tableName $butlerTableConfig -PartitionKey $butlerAplicationId 
+	   
+
+   #3. Create a Table "wamsbutleroutputformat"
+   New-AzureStorageTable -Context $butlerStorageContext -Name $butlerTableOutputFormatConfig
+   		#3.1 add entyties...... todo
+   		InsertButlerOutPutFormat -RowKey '0' -intOutTypesId 3 -JobEncodeDescription 'JOB multi bitrates Mp4' -TaskEncodeDescription 'Task multi bitrates MP4' -MediaProcessorByName 'Windows Azure Media Encoder' -EncodeDescription 'H264 Adaptive Bitrate MP4 Set 1080p.xml' -NameTail '_MP4v2'   -accountName $butlerStorageAccountName -accountKey $sKey -tableName $butlerTableOutputFormatConfig -PartitionKey $butlerAplicationId 
+		InsertButlerOutPutFormat -RowKey '1' -intOutTypesId 0 -JobEncodeDescription 'Not Encode only Package' -TaskEncodeDescription 'dynamic Package' -MediaProcessorByName 'N/A' -EncodeDescription 'N/A' -NameTail 'N/A'   -accountName $butlerStorageAccountName -accountKey $sKey -tableName $butlerTableOutputFormatConfig -PartitionKey $butlerAplicationId 
+    #4. Create a Queue wamsbutlerallencodefinish
+   New-AzureStorageQueue -Name $butlerNotificationQueueName -Context $butlerStorageContext
+   #5. Create a Blob storage Container "stage"
+   New-AzureStorageContainer -Name $butlerContainerStageName -Context $butlerStorageContext -Permission Off
+  
+   #6. Create a Blob storage container "wamsvodbuterencodeconfig"
+   New-AzureStorageContainer -Name $butlerEncodigConfigContainerName -Context $butlerStorageContext -Permission Off
+ }
+Catch [system.exception]
+ {
+    "Error: " + $error[0]
+ }
+}

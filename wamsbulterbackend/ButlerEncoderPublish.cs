@@ -17,25 +17,20 @@ namespace TED.Samples.WAMSBulter.BackEndService
     class ButlerEncoderPublish
     {
         private Object thisLock = new Object();
-        public EventHandler<JobFinishInfo> OnJobEncodeFinish;
-        public EventHandler<EncodeJobNotification> OnAssetAllEncodeFinish;
+       // public EventHandler<JobFinishInfo> OnJobEncodeFinish;
+       // public EventHandler<EncodeJobNotification> OnAssetAllEncodeFinish;
         private CloudMediaContext _MediaServiceContext;
         private string _accountMediaName;
         private string _accountMediaKey;
         private System.Collections.Hashtable VideoProcessHistoric;
-        //TODO:local scope
-        //private ProcessTrackInfoHelper myProcessTrackInfoHelper;
-
         private string myWamsButlerConn;
         private string myAppId;
         private Hashtable GetReadyVideoProcess(string WamsButlerConn, string VideoProcessContainer)
         {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(WamsButlerConn);
             CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
-            // Create the table if it doesn't exist.
             CloudTable table = tableClient.GetTableReference(VideoProcessContainer);
             table.CreateIfNotExists();
-
             TableQuery<VideoRegister> query =
                 new TableQuery<VideoRegister>().Where(
                 TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal,myAppId));
@@ -64,7 +59,6 @@ namespace TED.Samples.WAMSBulter.BackEndService
             ProfileFileDirectory = null;
             myWamsButlerConn=WamsButlerConn;
             myAppId = AppId;
-           // myProcessTrackInfoHelper = new ProcessTrackInfoHelper(myWamsButlerConn);
         }
         //TODO: move to workerEncoder
         private IAsset CreateAssetFromBlob(CloudBlobContainer externalMediaBlobContainer, string ExternalBlobName, CloudBlobClient assetBlobClient, string MediaServicesBlobName, string myProcessId)
@@ -80,9 +74,7 @@ namespace TED.Samples.WAMSBulter.BackEndService
 
             string assetContainerName = (new Uri(destinationLocator.Path)).Segments[1];
             CloudBlobContainer assetContainer = assetBlobClient.GetContainerReference(assetContainerName);
-
             CloudBlockBlob ExternalBlob = externalMediaBlobContainer.GetBlockBlobReference(ExternalBlobName);
-
             CloudBlockBlob assetBlob = assetContainer.GetBlockBlobReference(MediaServicesBlobName);
 
             var sas = externalMediaBlobContainer.GetSharedAccessSignature(new SharedAccessBlobPolicy()
@@ -105,7 +97,6 @@ namespace TED.Samples.WAMSBulter.BackEndService
             assetBlob.FetchAttributes();
 
             var assetFile = asset.AssetFiles.Create(MediaServicesBlobName);
-
             destinationLocator.Delete();
             writePolicy.Delete();
             //// Refresh the asset.
@@ -149,47 +140,35 @@ namespace TED.Samples.WAMSBulter.BackEndService
             switch ((MediaContentType)currentOutPutFormat.OutTypesId)
             {
                 case MediaContentType.SmoothStreaming:
-                    
                     //b. Publish H264
-                    Trace.TraceInformation("Publish H264");
-
                     currentLocator = currentWorkerEncoder.GetDynamicStreamingUrl(currentAsset.Id, LocatorType.OnDemandOrigin, MediaContentType.SmoothStreaming);
                     break;
                 case MediaContentType.HLS:
-                    Trace.TraceInformation("Publish HLS");
-
                     currentLocator = currentWorkerEncoder.GetDynamicStreamingUrl(currentAsset.Id, LocatorType.OnDemandOrigin, MediaContentType.HLS);
                     break;
                 case MediaContentType.H264Broadband720p:
                     //b. Publish H264
-                    Trace.TraceInformation("Publish H264 BroadBand");
-
                     currentLocator = currentWorkerEncoder.GetDynamicStreamingUrl(currentAsset.Id, LocatorType.Sas, MediaContentType.H264Broadband720p);
                     break;
                 case MediaContentType.HDS:
-                    Trace.TraceInformation("Publish HDS");
-
                     currentLocator = currentWorkerEncoder.GetDynamicStreamingUrl(currentAsset.Id, LocatorType.OnDemandOrigin, MediaContentType.HDS);
                     break;
                 default:
-                    //b. Publish H264
-                    Trace.TraceInformation("Publish " + currentOutPutFormat.EncodeDescription);
-
-                    currentLocator = currentWorkerEncoder.GetDynamicStreamingUrl(currentAsset.Id, LocatorType.Sas, MediaContentType.OtherSingleFile);
+                    //b. otherssss
+                     currentLocator = currentWorkerEncoder.GetDynamicStreamingUrl(currentAsset.Id, LocatorType.Sas, MediaContentType.OtherSingleFile);
                     break;
             }
             return currentLocator;
         }
         public void PublishFromBlob(string ExternalStorageConn, string ExternalStorageContainer, string ExternalBlobName, string AssetStorageConn, string AssestBlobName, string myEncodeProcessId)
         {
-            //1. Create Asset
+            //1. Create Asset //
             CloudStorageAccount externalStorageAccount = CloudStorageAccount.Parse(ExternalStorageConn);
             CloudBlobClient externalCloudBlobClient = externalStorageAccount.CreateCloudBlobClient();
             CloudBlobContainer externalMediaBlobContainer = externalCloudBlobClient.GetContainerReference(ExternalStorageContainer);
             CloudStorageAccount assetStorageAccount = CloudStorageAccount.Parse(AssetStorageConn);
             CloudBlobClient AssetBlobStoragclient = assetStorageAccount.CreateCloudBlobClient();
             System.Collections.Generic.List<JobFinishInfo> NotificationList = new System.Collections.Generic.List<JobFinishInfo>();
-            //ProcessTrackInfoHelper ptInfoHelper = new ProcessTrackInfoHelper(myWamsButlerConn);
             IAsset OriginalAsset;
             try
             {
@@ -197,63 +176,51 @@ namespace TED.Samples.WAMSBulter.BackEndService
                 if (OriginalAsset == null)
                 {
                     throw new Exception("Add Asset from blob Fail!");
-
                 }
             }
             catch (Exception X)
             {
-                
                 throw new Exception("[CreateAssetFromBlob] " + X.Message);
             }
-           
-           
+
+            //2. Setup the enviroment//
             string assetName = OriginalAsset.Name;
             IAsset CurrentAsset;
-
-            
-            //Start Tracking
-            //ptInfoHelper.CreateProcess(myAppId, myEncodeProcessId, ExternalBlobName);
-
             //0.setup
             EncodeJob myWorkerEncoder = new EncodeJob(ProfileFileDirectory);
-            myWorkerEncoder.MediaServiceContext = this._MediaServiceContext;
+            myWorkerEncoder.MediaServiceContext = ObtainContext(_accountMediaName, _accountMediaKey);
             myWorkerEncoder.ConnConfigFiles = this.myWamsButlerConn;
-            //TODO: imprube
+            //TODO: improve
             myWorkerEncoder.OnJobError += OnJobError;
             myWorkerEncoder.OnJobFinish += OnJobFinish;
-
-            //IAsset SmoothStreamingAsset = null;
             IAsset lastEncodedAsset = null;
             IJob currentJob;
             ILocator currentLocator;
-            
             //1. check Types
             System.Collections.Generic.IEnumerable<OutPutFormat> formatList= GetMediaContentType(myWamsButlerConn, "wamsbutleroutputformat", myAppId);
-            
             if (formatList.Count() == 0)
             {
                 throw new Exception("Output Format missing, review Table wamsbutleroutputformat");
             }
-            //Loop for each Output Format
+            //3. Loop for each Output Format//
             foreach (OutPutFormat encodeX in formatList)
             {
                 currentJob = null;
                 currentLocator = null;
-
-  
                 if ((MediaContentType)encodeX.OutTypesId == MediaContentType.HLS)
                 {
                     //This is package JOB, not real encoding for this reason uses the last Encode asset
+                    //Only use when you are making Static HLS Package
                     CurrentAsset = lastEncodedAsset;
                 }
                 else
                 {
                     CurrentAsset = OriginalAsset;
                 }
-                //a. Encode & output Assets
-                //Here we does the encoding and return the iJOB executed
+                //3.1. Encode & output Assets
                 try
                 {
+                    //Here we does the encoding and return the iJOB executed
                     currentJob = myWorkerEncoder.ExecuteJob(encodeX, CurrentAsset, assetName + encodeX.NameTail);
                 }
                 catch (Exception X)
@@ -266,14 +233,14 @@ namespace TED.Samples.WAMSBulter.BackEndService
                 {
                     lastEncodedAsset = currentJob.Tasks[0].OutputAssets[0];
                 }
-                {
-                    if (lastEncodedAsset == null)
-                    {
-                        throw new Exception("PublishFromBlob Error: first encode could not be only publish");
-                    }
-                }
 
-                ////b. Publish
+                if (lastEncodedAsset == null)
+                {
+                    throw new Exception("PublishFromBlob Error: first encode could not be only publish");
+                }
+                
+
+                ////3.2. Publish the Asset //
                 try
                 {
                     currentLocator = this.MasterPublish(encodeX, lastEncodedAsset, myWorkerEncoder);
@@ -287,21 +254,11 @@ namespace TED.Samples.WAMSBulter.BackEndService
                 //Notificaction JOB Complete
                 JobFinishInfo jobCompleteMessage = new JobFinishInfo(myEncodeProcessId, ExternalBlobName, currentJob, (MediaContentType)encodeX.OutTypesId, myWorkerEncoder.UrlForClientStreaming);
                 NotificationList.Add(jobCompleteMessage);
-                if (OnJobEncodeFinish != null)
-                {
-                    //Event dispach
-                    lock (this.thisLock)
-                    {
-                        
-                        OnJobEncodeFinish(null, jobCompleteMessage);
-                    }
-                }
-                //Track step advance
-               // ptInfoHelper.StepAdvance(myAppId, myEncodeProcessId, ExternalBlobName, encodeX.RowKey);
             }
-            //3.Delete Original Asset
+            //4.Delete Original Asset
             DeleteAssest(OriginalAsset);
-            //7. Notification: all encodig jobs are ready for this asset
+
+            //5. Notification: all encodig jobs are ready for this asset
             //notication File Complete
             INotificator notRobot = new QueueNotificator(myWamsButlerConn);
             try
@@ -313,18 +270,6 @@ namespace TED.Samples.WAMSBulter.BackEndService
 
                 throw new Exception("[sendNotification] " + X.Message) ;
             }
-            
-
-            if (OnAssetAllEncodeFinish != null)
-            {
-                lock (this.thisLock)
-                {
-                    EncodeJobNotification HappyMessage = new EncodeJobNotification(null, AssestBlobName, null, null);
-                    OnAssetAllEncodeFinish(null, HappyMessage);
-                }
-            }
-            //Finish Tracking
-            //ptInfoHelper.CloseProcess(myAppId, ExternalBlobName);
         }
         private IAsset GetAsset(string assetId)
         {
@@ -368,7 +313,6 @@ namespace TED.Samples.WAMSBulter.BackEndService
             table.Execute(insertOperation);
             //TODO: lock
             VideoProcessHistoric.Add(BlobName, 1);
-
         }
         private void ProcessNewVideo(CloudBlockBlob myExternalBlobVideo, string myExternalStorageConn, string myExternalStorageContainer, string myAssetStorageConn)
         {
@@ -379,7 +323,6 @@ namespace TED.Samples.WAMSBulter.BackEndService
                 PublishFromBlob(myExternalStorageConn, myExternalStorageContainer, myExternalBlobVideo.Name, myAssetStorageConn, myExternalBlobVideo.Name,myEncodeProcessId);
                 Trace.TraceInformation("Finish Processing " + myExternalBlobVideo.Name);
                 NewVideoProcessed(myExternalBlobVideo.Name, myExternalBlobVideo.Uri.AbsoluteUri, myWamsButlerConn, "wamsbutlervideohistory");
-
             }
             catch (Exception X)
             {
@@ -405,7 +348,7 @@ namespace TED.Samples.WAMSBulter.BackEndService
             this.VideoProcessHistoric = this.GetReadyVideoProcess(myWamsButlerConn, "wamsbutlervideohistory");
             Hashtable myEncodeList = new Hashtable();
             int myEncodeListkey = 0;
-            foreach (IListBlobItem item in externalContainer.ListBlobs(null, true, BlobListingDetails.None, null, null))
+            foreach (IListBlobItem item in externalContainer.ListBlobs(null, false, BlobListingDetails.None, null, null))
             {
                 if (item.GetType() == typeof(CloudBlockBlob))
                 {
@@ -415,11 +358,7 @@ namespace TED.Samples.WAMSBulter.BackEndService
                         myEncodeList.Add(myEncodeListkey, ExternalBlobVideo);
                         myEncodeListkey += 1;
                     }
-                    else
-                    {
-                        //Trace.TraceInformation("Blob: {0} alrready encoded", ExternalBlobVideo.Name);
-                    }
-                    Trace.Flush();
+                    
                 }
             }
 
@@ -455,7 +394,6 @@ namespace TED.Samples.WAMSBulter.BackEndService
                 Trace.TraceError("[DeleteOldWADLOGData] " + X.Message);
             }
         }
-
         private void RollBack(string PartialBlobName)
         {
             foreach (IAsset asset in _MediaServiceContext.Assets)
