@@ -38,6 +38,15 @@
     <ServiceConfiguration Include="ServiceConfiguration.Cloud.cscfg" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Profiles" />
+    <Folder Include="wamsbulterbackendContent\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="wamsbulterbackendContent\diagnostics.wadcfg">
+      <SubType>Content</SubType>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\wamsbulterbackend\wamsbulterbackend.csproj">
       <Name>wamsbulterbackend</Name>
       <Project>{405dfe8a-6ca3-478f-9b59-904da97c6aa1}</Project>
@@ -46,15 +55,6 @@
       <RoleName>wamsbulterbackend</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Profiles" />
-    <Folder Include="wamsbulterbackendContent\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="wamsbulterbackendContent\diagnostics.wadcfg">
-      <SubType>Content</SubType>
-    </Content>
   </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>

@@ -3,8 +3,6 @@
   <WorkerRole name="wamsbulterbackend" vmsize="Small">
     <Imports>
       <Import moduleName="Diagnostics" />
-      <Import moduleName="RemoteAccess" />
-      <Import moduleName="RemoteForwarder" />
     </Imports>
     <ConfigurationSettings>
       <Setting name="strConnConfig" />
